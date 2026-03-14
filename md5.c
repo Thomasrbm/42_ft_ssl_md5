@@ -10,47 +10,43 @@ Emulate the behavior of the md5sum executable.
 same way that OpenSSL does.
 
 
-padding pour que taille = 
+sans rien (ni file ni flag)  lit tout depuis stdin 
+comme heredoc => concatenne tout jusqu au EOF. 
 
-448 mod 512 + 64 = longueur multiple 512
-
-
-
+hash et -
 
 
-4 registres de 32 bits (A, B, C, D) initialisés avec des constantes magiques :
-A = 0x67452301
-B = 0xEFCDAB89
-C = 0x98BADCFE
-D = 0x10325476
+-p (inpu)=          (ecrase r)
+-q quiet, rien ...  (ecrase R)
+-r hash file
+-s 
 
 
+md5 -r /tmp/file
+md4-help
+
+ md5sum --quiet Readme                                                                                                                                     ✔ 
+md5sum: the --quiet option is meaningful only when verifying checksums
+Try 'md5sum --help' for more information.
 
 
-
- 4 rounds de 16 opérations chacun (64 ops total)
-
+=> flags pas testables => faire docker pour old version
 
 
+bonus = ne pas prendre depuis argv mais depuis stdin
+faire ./ft_ssl 
+
+ft_ssl > md5 -q fichier
 
 
-Round 1 — F(B,C,D) = (B AND C) OR (NOT B AND D)
-Round 2 — G(B,C,D) = (B AND D) OR (C AND NOT D)
-Round 3 — H(B,C,D) = B XOR C XOR D
-Round 4 — I(B,C,D) = C XOR (B OR NOT D)
+ echo "Pity the living." | ./ft_ssl md5 -q -r
+ prendre depuis STDIN 
+
+char *ft_md5(char *input)
+{
 
 
-
-À chaque opération : addition modulaire 2³², rotation bit, XOR, constante pré-calculée.
-
-
-
-
-
-Après tous les blocs, A+B+C+D concaténés → digest de 128 bits (32 hex).
-
-
-
+}
 
 ===================== EXEMPLE ============================
 
