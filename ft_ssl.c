@@ -24,7 +24,7 @@ int main(int ac, char **av)
     {
 
     }
-    else if(argv[1] == "bonus")
+    else if(argv[1] == "whirlpool")
     {
         ft_sha256();
     }

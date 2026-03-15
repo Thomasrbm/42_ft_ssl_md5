@@ -42,11 +42,115 @@ ft_ssl > md5 -q fichier
  echo "Pity the living." | ./ft_ssl md5 -q -r
  prendre depuis STDIN 
 
-char *ft_md5(char *input)
-{
 
+static void	split_blocks(unsigned char *hash, uint32_t *m)
+{
+	int	i;
+
+	i = 0;
+	while (i < 16)
+	{
+		m[i] = (uint32_t)hash[i * 4]
+			| (uint32_t)hash[i * 4 + 1] << 8
+			| (uint32_t)hash[i * 4 + 2] << 16
+			| (uint32_t)hash[i * 4 + 3] << 24;
+		i++;
+	}
+}
+
+
+static int   padding(unsigned char *hash, int len)
+{
+	int	padded_len;
+
+	ft_memcpy(hash, input, len);
+	hash[len] = 0x80;
+	padded_len = len + 1;
+	while (padded_len % 64 != 56) // si nombre etait plus grand, garde les 8 pour la len.
+		hash[padded_len++] = 0x00;
+	uint64_t bit_len = (uint64_t)len * 8; // unint pas double car stock pas les bits pareil
+	ft_memcpy(hash + padded_len, &bit_len, 8);
+	padded_len += 8;
+	return (padded_len);
+}
+
+char    *ft_md5(char *input)
+{
+	unsigned char	hash[512]; // unsigned : sinon les char lisent mal (-127 128)
+	int				len;
+	int				padded_len;
+
+	len = ft_strlen(input);
+	padded_len = padding(hash, len);
+
+	uint32_t m[16];
+	split_blocks(hash, m);
+
+	int A = 0x67452301;
+	int B = 0xEFCDAB89;
+	int C = 0x98BADCFE;
+	int D = 0x10325476;
+
+	int T[64];
+	for (int i = 0; i < 64; i++)
+		T[i] = floor( abs( sin(i+1) ) × 2^32 );
+
+
+	int S[64] = {
+	 7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
+	 5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
+	 4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
+	 6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
+	};
+
+
+	// FGHI
+
+	// operation binaires 
+
+
+	// Round 1 : F(B,C,D) = (B AND C) OR (NOT B AND D)   1 a 16
+	// Round 2 : G(B,C,D) = (B AND D) OR (C AND NOT D)
+	// Round 3 : H(B,C,D) = B XOR C XOR D
+	// Round 4 : I(B,C,D) = C XOR (B OR NOT D)         48 a 64
+
+
+
+	// chaque round = 
+
+
+
+	// 1. calculer F(B,C,D)  ← la fonction du round en cours
+	// 2. temp = A + F + M[k] + T[i]   ← tout additionner
+	// 3. temp = rotation_gauche(temp, S[i])   ← faire tourner les bits
+	// 4. B = B + temp   ← mettre à jour B
+	// 5. A, B, C, D = D, A, B, C   ← décaler les rôles
+
+
+
+
+
+
+	
+
+	// A_final = A + 0x67452301
+	// B_final = B + 0xEFCDAB89
+	// C_final = C + 0x98BADCFE
+	// D_final = D + 0x10325476
+
+
+	// ETAPE 7
+
+
+	// On écrit chaque registre en little-endian
+
+	// A = 0x90015098
+	// 	^^ ^^ ^^ ^^
+	// 	98 50 01 90   ← lu de droite à gauche
 
 }
+
+
 
 ===================== EXEMPLE ============================
 
@@ -76,7 +180,7 @@ on remplit de 0 jusqu a 56
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00
-                       ^ on est à l'octet 56
+					   ^ on est à l'octet 56
 
 
 
@@ -164,10 +268,10 @@ S
 liste figée de 64 nombres
 
 int S[64] = {
-     7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
-     5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
-     4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
-     6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
+	 7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
+	 5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
+	 4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
+	 6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
 };
 
 
@@ -222,8 +326,8 @@ ETAPE 7
 On écrit chaque registre en little-endian
 
 A = 0x90015098
-      ^^ ^^ ^^ ^^
-      98 50 01 90   ← lu de droite à gauche
+	  ^^ ^^ ^^ ^^
+	  98 50 01 90   ← lu de droite à gauche
 
 
 

@@ -1,3 +1,4 @@
+import { useDebugValue } from "react";
 
 
 
@@ -6,3 +7,83 @@
 
 
 
+
+
+
+
+
+===================  EXEMPLE DES PREFERENCES SELON LES USAGES ===================
+
+
+
+
+
+
+
+
+Blake3 rapide mais pour password c est pas ce qu on veut => Intégrité de fichiers check rapide.
+
+md5 => plutot tres deprecie mtn
+
+Argon2 / bcrypt => pref pour les mdp  argon meilleur, bcrypt plus used 
+
+sha256 => le plus used PARTOUT 
+
+
+
+
+
+
+
+
+
+signatures numeriques => sha256 
+
+hashage de mdp / kdf (key derivation fonction, prend mdp simple et hash complique pour mettre dans contraite de safety) => Argon2id (reco par OWASP)
+
+Proof of work =>  SHA-256
+ 
+Adresse de wallet =>  SHA-256 puis RIPEMD-160
+
+
+HMAC authentif de msg (Hash message auth code)  =>  HMAC-SHA256 
+
+
+handhask reseau =>  SHA-256 
+
+
+SSH =>  SHA-256
+
+DNS =>   SHA-256 et SHA-384
+
+
+Git  =>  sha-1 et mtn sha256
+
+
+Duplactions cloud/backup =>  SHA-256 ou BLAKE3
+
+
+
+Chaînage de blocs Tamper-proof ledger (le livre ou on ecrit toute transaction, peut pas modif sans qu on voit) =>  sha256
+Bloc 1 : [transactions] → hash_1
+Bloc 2 : [transactions + hash_1] → hash_2
+Bloc 3 : [transactions + hash_2] → hash_3
+
+
+Adresses wallet =>  RIPEMD-160 + SHA-256
+
+
+API auth => sha-256
+ 
+
+Génération de nombres aléatoire =>  PRNG 
+
+
+Merkle trees  prouver à quelqu'un qu'un fichier spécifique fait partie de cet ensemble, sans lui envoyer le million de fichiers. => blake3 ou sha256
+			 hash_racine
+            /           \
+       hash_AB          hash_CD
+       /    \           /    \
+   hash_A  hash_B   hash_C  hash_D
+     |       |        |       |
+  fichierA fichierB fichierC fichierD

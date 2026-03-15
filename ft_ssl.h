@@ -17,4 +17,9 @@ typedef struct s_sha256
     bool _flag;
     bool _flag;
     bool _flag;
-} t_sha256
+} t_sha256;
+
+
+
+void	free_tab(char **tab, size_t n);
+char	**ft_split(const char *s, char c);
