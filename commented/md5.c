@@ -42,150 +42,177 @@
 //  echo "Pity the living." | ./ft_ssl md5 -q -r
 //  prendre depuis STDIN 
 
+
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <math.h>
 
-static size_t   padding(unsigned char *hash, char *input, size_t len)
+size_t	ft_strlen(const char *s);
+void	*ft_memcpy(void *dest, const void *src, size_t n);
+
+// padding du message selon la spec MD5 (RFC 1321)
+// bit 1 apres le message, puis des 0, puis la taille en bits sur 8 octets
+static size_t	padding(unsigned char *hash, char *input, size_t len)
 {
-    size_t      padded_len;
-    uint64_t    bit_len;
+	size_t		padded_len;
+	uint64_t	bit_len;
 
-    ft_memcpy(hash, input, len);
-    hash[len] = 0x80;             // bit 1 obligatoire apres le message (spec MD5)
-    padded_len = len + 1;
-    while (padded_len % 64 != 56) // si nombre etait plus grand, garde les 8 pour la len.
-        hash[padded_len++] = 0x00;
-    bit_len = (uint64_t)len * 8;  // unint pas double car stock pas les bits pareil
-    ft_memcpy(hash + padded_len, &bit_len, 8);
-    padded_len += 8;
-    return (padded_len);
+	ft_memcpy(hash, input, len);
+	hash[len] = 0x80;
+	padded_len = len + 1;
+	while (padded_len % 64 != 56)
+		hash[padded_len++] = 0x00;
+	bit_len = (uint64_t)len * 8;
+	ft_memcpy(hash + padded_len, &bit_len, 8);
+	padded_len += 8;
+	return (padded_len);
 }
 
-static void     split_blocks_m(unsigned char *hash, uint32_t *m)
+// decoupe un bloc de 64 octets en 16 mots de 32 bits little-endian
+static void	split_blocks_m(unsigned char *block, uint32_t *m)
 {
-    int i;
+	int	i;
 
-    i = 0;
-    while (i < 16)
-    {
-        m[i] = (uint32_t)hash[i * 4]
-            | (uint32_t)hash[i * 4 + 1] << 8
-            | (uint32_t)hash[i * 4 + 2] << 16
-            | (uint32_t)hash[i * 4 + 3] << 24;
-        i++;
-    }
+	i = 0;
+	while (i < 16)
+	{
+		m[i] = (uint32_t)block[i * 4]
+			| (uint32_t)block[i * 4 + 1] << 8
+			| (uint32_t)block[i * 4 + 2] << 16
+			| (uint32_t)block[i * 4 + 3] << 24;
+		i++;
+	}
 }
 
-static uint32_t rotate_left(uint32_t x, uint32_t n)
+static uint32_t	rotate_left(uint32_t x, uint32_t n)
 {
-    return ((x << n) | (x >> (32 - n)));
+	return ((x << n) | (x >> (32 - n)));
 }
 
-static void     md5_rounds(uint32_t *m, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d)
-{	
-    uint32_t    T[64];
-    uint32_t    S[64] = {
-		7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
-        5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
-        4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
-        6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
-    };
-	
-    for (int i = 0; i < 64; i++)
-    {
-		T[i] = (uint32_t)(fabs(sin(i + 1)) * 4294967296.0); // 2^32 = 4294967296
-        i++;
-    }
-	
-	uint32_t    f;
-    uint32_t    k;
-	uint32_t    temp;
-    for  (int i = 0; i < 64; i++)
-    {
-        if (i < 16)
-        {
-            f = (*b & *c) | (~*b & *d);  // F
-            k = i;
-        }
-        else if (i < 32)
-        {
-            f = (*b & *d) | (*c & ~*d);  // G
-            k = (5 * i + 1) % 16;
-        }
-        else if (i < 48)
-        {
-            f = *b ^ *c ^ *d;            // H
-            k = (3 * i + 5) % 16;
-        }
-        else
-        {
-            f = *c ^ (*b | ~*d);         // I
-            k = (7 * i) % 16;
-        }
-        temp = *a + f + m[k] + T[i];
-        temp = rotate_left(temp, S[i]);
-        temp = temp + *b;
-        *a = *d;
-        *d = *c;
-        *c = *b;
-        *b = temp;
-    }
+// les 64 rounds MD5 : F G H I avec les constantes T et les shifts S
+static void	md5_rounds(uint32_t *m, uint32_t *state)
+{
+	static const uint32_t	s[64] = {
+		7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+		5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+		4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+		6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+	};
+	uint32_t				t[64];
+	uint32_t				a;
+	uint32_t				b;
+	uint32_t				c;
+	uint32_t				d;
+	uint32_t				f;
+	uint32_t				k;
+	uint32_t				temp;
+	int						i;
+
+	i = 0;
+	while (i < 64)
+	{
+		t[i] = (uint32_t)(fabs(sin(i + 1)) * 4294967296.0);
+		i++;
+	}
+	a = state[0];
+	b = state[1];
+	c = state[2];
+	d = state[3];
+	i = 0;
+	while (i < 64)
+	{
+		if (i < 16)
+		{
+			f = (b & c) | (~b & d);
+			k = i;
+		}
+		else if (i < 32)
+		{
+			f = (b & d) | (c & ~d);
+			k = (5 * i + 1) % 16;
+		}
+		else if (i < 48)
+		{
+			f = b ^ c ^ d;
+			k = (3 * i + 5) % 16;
+		}
+		else
+		{
+			f = c ^ (b | ~d);
+			k = (7 * i) % 16;
+		}
+		temp = a + f + m[k] + t[i];
+		temp = rotate_left(temp, s[i]);
+		temp = temp + b;
+		a = d;
+		d = c;
+		c = b;
+		b = temp;
+		i++;
+	}
+	state[0] += a;
+	state[1] += b;
+	state[2] += c;
+	state[3] += d;
 }
 
-static char     *md5_final_concat(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+// colle les 4 registres en little-endian puis convertit en hex
+static char	*md5_final_concat(uint32_t *state)
 {
-    unsigned char   digest[16];
-    char            *result;
-    int             i;
-    char            *hex = "0123456789abcdef";
+	unsigned char	digest[16];
+	char			*result;
+	int				i;
+	char			*hex;
 
-    // colle a b c d en little-endian dans digest
-    ft_memcpy(digest,      &a, 4);
-    ft_memcpy(digest + 4,  &b, 4);
-    ft_memcpy(digest + 8,  &c, 4);
-    ft_memcpy(digest + 12, &d, 4);
-    // convertit les 16 octets en 32 caracteres hex
-    result = malloc(33);
-    i = 0;
-    while (i < 16)
-    {
-        result[i * 2]     = hex[digest[i] >> 4];  // octet fort
-        result[i * 2 + 1] = hex[digest[i] & 0xF]; // octet faible
-        i++;
-    }
-    result[32] = '\0';
-    return (result);
+	hex = "0123456789abcdef";
+	ft_memcpy(digest, &state[0], 4);
+	ft_memcpy(digest + 4, &state[1], 4);
+	ft_memcpy(digest + 8, &state[2], 4);
+	ft_memcpy(digest + 12, &state[3], 4);
+	result = malloc(33);
+	if (!result)
+		return (NULL);
+	i = 0;
+	while (i < 16)
+	{
+		result[i * 2] = hex[digest[i] >> 4];
+		result[i * 2 + 1] = hex[digest[i] & 0xF];
+		i++;
+	}
+	result[32] = '\0';
+	return (result);
 }
 
-char            *ft_md5(char *input)
+char	*ft_md5(char *input)
 {
-    unsigned char   hash[512]; // unsigned : sinon les char lisent mal (-127 128)
-    size_t          len;
-    size_t          padded_len;
-    uint32_t        m[16];
+	unsigned char	*hash;
+	size_t			len;
+	size_t			padded_len;
+	size_t			offset;
+	uint32_t		m[16];
+	uint32_t		state[4];
 
-    len = ft_strlen(input);
-    padded_len = padding(hash, input, len);
-    split_blocks_m(hash, m);  // 
-
-	uint32_t        a;
-    uint32_t        b;
-    uint32_t        c;
-    uint32_t        d;
-
-    a = 0x67452301;
-    b = 0xEFCDAB89;
-    c = 0x98BADCFE;
-    d = 0x10325476;
-
-    md5_rounds(m, &a, &b, &c, &d);
-
-	a += 0x67452301;
-    b += 0xEFCDAB89;
-    c += 0x98BADCFE;
-    d += 0x10325476;
-
-    return (md5_final_concat(a, b, c, d));
+	len = ft_strlen(input);
+	hash = malloc(len + 64 + 8);
+	if (!hash)
+		return (NULL);
+	padded_len = padding(hash, input, len);
+	// valeurs initiales MD5 (RFC 1321)
+	state[0] = 0x67452301;
+	state[1] = 0xEFCDAB89;
+	state[2] = 0x98BADCFE;
+	state[3] = 0x10325476;
+	// boucle sur chaque bloc de 64 octets
+	offset = 0;
+	while (offset < padded_len)
+	{
+		split_blocks_m(hash + offset, m);
+		md5_rounds(m, state);
+		offset += 64;
+	}
+	free(hash);
+	return (md5_final_concat(state));
 }
 
 

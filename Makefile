@@ -1,18 +1,22 @@
-NAME		= ft_ssl
-
-CC		= cc
-CFLAGS		= -Wall -Wextra -Werror
-
-SRCS		= # tes sources ici
-OBJS		= $(SRCS:.c=.o)
+NAME        = ft_ssl
+CC          = cc
+CFLAGS      = -Wall -Wextra -Werror -I includes
+SRCS        = srcs/md5.c srcs/sha256.c srcs/ft_ssl.c
+HEADERS     = includes/ft_ssl.h includes/md5.h includes/sha256.h
+OBJ_DIR     = obj
+OBJS        = $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
 	$(CC) $(CFLAGS) -o $(NAME) $(OBJS)
 
+$(OBJ_DIR)/%.o: %.c $(HEADERS)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 clean:
-	rm -f $(OBJS)
+	rm -rf $(OBJ_DIR)
 
 fclean: clean
 	rm -f $(NAME)
@@ -22,8 +26,7 @@ re: fclean all
 # ------------------------------------------------
 #  Docker - reference OpenSSL 1.1.1
 # ------------------------------------------------
-
-DOCKER_IMAGE	= ft_ssl_ref
+DOCKER_IMAGE    = ft_ssl_ref
 
 docker:
 	@if docker image inspect $(DOCKER_IMAGE) > /dev/null 2>&1; then \

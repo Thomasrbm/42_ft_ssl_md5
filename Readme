@@ -1,5 +1,33 @@
-import { useDebugValue } from "react";
 
+
+
+===================  Big / little endian  ===================
+
+ENDIANNESS  =  QUE POUR LES NOMBRES MULTY BYTES
+
+rpz dans quel sens ?
+
+
+
+
+
+
+lire de gauche a droite ou de droite a gauche    
+
+little  =  100  = un
+big = 100 = cent
+
+
+x86 des annes 70 on choisit little. ...
+sha256 2001  NIST/NSA on choisit big comme la vraie vie quoi. 
+
+
+
+
+
+
+
+les char eux sont des octets mis a la suite sans logique de groupe. (c est la lecture qui cree la logique.)
 
 
 
